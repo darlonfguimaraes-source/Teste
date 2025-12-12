@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Bloco Quicante e Explosivo (Canvas)</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+
+    <style>
+        /* CSS para centralizar a área de desenho e dar um visual limpo */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #1a1a1a; /* Fundo escuro */
+            overflow: hidden; /* Remove barras de rolagem */
+        }
+    </style>
+</head>
+<body>
+
+<script>
+    // --- CLASSES E LÓGICA DO JOGO ---
+
+    // 1. Classe Fragmento (Os pedacinhos que voam)
+    class Fragmento {
+        constructor(x, y, cor) {
+            this.pos = createVector(x, y);
+            // Gera um vetor de velocidade aleatório
+            this.vel = p5.Vector.random2D().mult(random(2, 6)); 
+            this.cor = cor;
+            this.tamanho = random(3, 8);
+            this.vida = 255;
+        }
+
+        update() {
+            this.pos.add(this.vel);
+            // Aplica um pequeno atrito (desaceleração)
+            this.vel.mult(0.98); 
+            this.vida -= 5; // Diminui a opacidade
+        }
+
+        show() {
+            noStroke();
+            // Desenha o fragmento com opacidade baseada na 'vida'
+            fill(this.cor[0], this.cor[1], this.cor[2], this.vida); 
+            rect(this.pos.x, this.pos.y, this.tamanho, this.tamanho);
+        }
+
+        isFinished() {
+            return this.vida < 0;
+        }
+    }
+
+    // --- VARIÁVEIS GLOBAIS ---
+    let blocoX;
+    let blocoY;
+    let blocoSize = 80;
+    let velocidadeY = 1.5;
+    let fragments = [];
+    let blocoCor = [255, 100, 100]; 
+    let isExploded = false;
+
+    // Função de inicialização do p5.js
+    function setup() {
+        // Cria a tela de desenho (Canvas) e anexa ao corpo
+        let canvas = createCanvas(600, 400); 
+        canvas.parent('body'); // Garante que o CSS de centralização funcione
+
+        // Centraliza o bloco
+        blocoX = width / 2;
+        blocoY = height / 2;
+        rectMode(CENTER);
+    }
+
+    // Função de desenho (Loop principal)
+    function draw() {
+        background(20);
+
+        // 1. Lógica do Quique do Bloco Principal
+        if (!isExploded) {
+            blocoY += velocidadeY;
+
+            // Inverte a direção se atingir o limite
+            if (blocoY + blocoSize / 2 >= height || blocoY - blocoSize / 2 <= 0) {
+                velocidadeY *= -1; 
+            }
+
+            // Desenha o Bloco Principal
+            fill(blocoCor);
+            stroke(255); 
+            strokeWeight(2);
+            rect(blocoX, blocoY, blocoSize, blocoSize, 10);
+        }
+
+        // 2. Lógica dos Fragmentos
+        for (let i = fragments.length - 1; i >= 0; i--) {
+            fragments[i].update();
+            fragments[i].show();
+
+            // Remove os fragmentos que sumiram
+            if (fragments[i].isFinished()) {
+                fragments.splice(i, 1);
+            }
+        }
+
+        // 3. Reinicia o bloco principal se a explosão terminar
+        if (isExploded && fragments.length === 0) {
+            isExploded = false;
+        }
+    }
+
+    // --- Lógica do Clique do Mouse ---
+    function mousePressed() {
+        let d = dist(mouseX, mouseY, blocoX, blocoY);
+
+        // Se o clique estiver DENTRO do bloco e ele não tiver explodido
+        if (d < blocoSize / 2 && !isExploded) {
+            isExploded = true;
+            
+            // Cria os fragmentos coloridos
+            for (let i = 0; i < 50; i++) {
+                // Fragmentos com cores RGB aleatórias
+                let corFragmento = [random(255), random(255), random(255)]; 
+                fragments.push(new Fragmento(blocoX, blocoY, corFragmento));
+            }
+        }
+    }
+</script>
+
+</body>
+</html>
